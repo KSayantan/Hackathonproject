@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Timetable Generator</title>
+<style>
+* { box-sizing: border-box; }
+body, html { margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#1e293b; color:#f1f5f9; }
+.centered-container { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:1rem; }
+.card { background:#334155; padding:2rem; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.5); width:100%; max-width:480px; position:relative; }
+h2,h3 { color:#60a5fa; margin-top:0; }
+label { display:block; margin-bottom:0.3rem; font-weight:600; color:#93c5fd; }
+input, select { width:100%; padding:0.6rem 0.8rem; margin-bottom:1rem; border-radius:6px; border:none; font-size:1rem; background:#475569; color:#f1f5f9; }
+input::placeholder { color:#94a3b8; }
+input:focus, select:focus { outline:2px solid #3b82f6; background:#64748b; }
+.password-container { position:relative; }
+.password-container input { width:100%; padding-right:2.5rem; }
+.password-container .toggle-pass { position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); cursor:pointer; color:#f1f5f9; font-size:1.2rem; }
+button { width:100%; padding:0.75rem; background:#3b82f6; border:none; border-radius:8px; color:white; font-weight:700; font-size:1.1rem; cursor:pointer; transition:0.3s; }
+button:hover { background:#2563eb; }
+.error-message { color:#f87171; font-weight:600; margin-bottom:1rem; min-height:1.2em; text-align:center; }
+#dashboard { max-width:960px; margin:2rem auto; background:#334155; padding:2rem; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.5); display:none; color:#f1f5f9; }
+#dashboard h1 { color:#60a5fa; margin-top:0; }
+#login-message { background:#2563eb; color:white; padding:0.8rem; border-radius:6px; margin-bottom:1rem; text-align:center; display:none; }
+#subjects-container>div,#special-classes-container>div { background:#475569; padding:1rem; border-radius:8px; margin-bottom:1rem; }
+table { width:100%; border-collapse:collapse; margin-top:1rem; }
+th,td { border:1px solid #64748b; padding:0.5rem; text-align:center; }
+th { background:#3b82f6; color:white; }
+td { background:#475569; }
+#logout-btn { margin-top:2rem; background:#ef4444; }
+#logout-btn:hover { background:#b91c1c; }
+.hidden { display:none; }
+@media(max-width:600px){ #dashboard{ margin:1rem; padding:1rem; } #subjects-container>div,#special-classes-container>div{ padding:0.8rem; } }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="centered-container" id="login-container">
+  <div class="card">
+    <h2>Timetable Generator Login</h2>
+    <form id="login-form" novalidate>
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username" required />
+
+      <label>Password</label>
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Enter password" required />
+        <span class="toggle-pass" id="toggle-login-pass">&#128065;</span>
+      </div>
+
+      <div class="error-message" id="login-error"></div>
+      <button type="submit">Login</button>
+    </form>
+    <p style="text-align:center; margin-top:1rem;">
+      <a href="#" id="show-register" style="color:#60a5fa; text-decoration:underline;">New admin? Register here</a>
+    </p>
+  </div>
+</div>
+
+<!-- REGISTRATION -->
+<div class="centered-container hidden" id="register-container">
+  <div class="card">
+    <h2>New Admin Registration</h2>
+    <form id="register-form" novalidate>
+      <label>New Username</label>
+      <input type="text" id="new-username" placeholder="Enter username" required />
+
+      <label>New Password</label>
+      <div class="password-container">
+        <input type="password" id="new-password" placeholder="Enter password" required />
+        <span class="toggle-pass" id="toggle-register-pass">&#128065;</span>
+      </div>
+
+      <div class="error-message" id="register-error"></div>
+      <button type="submit">Register</button>
+    </form>
+    <p style="text-align:center; margin-top:1rem;">
+      <a href="#" id="back-to-login" style="color:#60a5fa; text-decoration:underline;">Back to login</a>
+    </p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div id="login-message"></div>
+  <h1>Advanced College Timetable Generator</h1>
+
+  <section id="input-section">
+    <h2>Enter Timetable Parameters</h2>
+    <form id="timetable-form" novalidate>
+      <label>Number of Classrooms:</label>
+      <input type="number" id="numClassrooms" min="1" max="20" value="3" required />
+
+      <label>Number of Student Batches:</label>
+      <input type="number" id="numBatches" min="1" max="10" value="2" required />
+
+      <label>Number of Subjects to be Taught in This Semester:</label>
+      <input type="number" id="numSubjects" min="1" max="20" value="3" required />
+
+      <label>Number of Faculties Available for Different Subjects:</label>
+      <input type="number" id="numFaculties" min="1" max="20" value="3" required />
+
+      <div id="subjects-container"></div>
+
+      <label>Maximum Classes Per Day:</label>
+      <input type="number" id="maxClassesPerDay" min="1" max="8" value="5" required />
+
+      <label>Days Per Week:</label>
+      <input type="number" id="daysPerWeek" min="1" max="7" value="5" required />
+
+      <label>Average Leaves Per Faculty per Month:</label>
+      <input type="number" id="avgLeaves" min="0" max="31" value="2" required />
+
+      <h3>Special Classes (Fixed Slots)</h3>
+      <label>Number of Special Classes:</label>
+      <input type="number" id="numSpecialClasses" min="0" max="10" value="0" />
+      <div id="special-classes-container"></div>
+
+      <button type="submit">Generate Timetable</button>
+    </form>
+  </section>
+
+  <section id="timetable-section" class="hidden">
+    <h2>Generated Timetable</h2>
+    <div id="timetable-display"></div>
+    <button id="regenerate-btn">Regenerate Timetable</button>
+  </section>
+
+  <button id="logout-btn">Logout</button>
+</div>
+
+<script>
+/* ===== ELEMENTS ===== */
+const loginForm=document.getElementById('login-form');
+const loginError=document.getElementById('login-error');
+const loginContainer=document.getElementById('login-container');
+const dashboard=document.getElementById('dashboard');
+const logoutBtn=document.getElementById('logout-btn');
+const timetableForm=document.getElementById('timetable-form');
+const numSubjectsInput=document.getElementById('numSubjects');
+const numFacultiesInput=document.getElementById('numFaculties');
+const subjectsContainer=document.getElementById('subjects-container');
+const numSpecialClassesInput=document.getElementById('numSpecialClasses');
+const specialClassesContainer=document.getElementById('special-classes-container');
+const timetableDisplay=document.getElementById('timetable-display');
+const timetableSection=document.getElementById('timetable-section');
+const inputSection=document.getElementById('input-section');
+const regenerateBtn=document.getElementById('regenerate-btn');
+const loginMessage=document.getElementById('login-message');
+const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+/* ===== TIME SLOT GENERATOR (9 AM – 5 PM) ===== */
+function generateTimeSlots() {
+  const slots = [];
+  for (let h = 9; h < 17; h++) {
+    slots.push(`${formatTime(h)} - ${formatTime(h + 1)}`);
+  }
+  return slots;
+}
+
+function formatTime(h) {
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hour = ((h + 11) % 12) + 1; // converts 13 → 1, 14 → 2, etc.
+  return hour + ":00 " + suffix;
+}
+
+
+/* ===== PASSWORD TOGGLE ===== */
+document.getElementById('toggle-login-pass').addEventListener('click',()=>{ const pass=document.getElementById('password'); pass.type=pass.type==='password'?'text':'password'; });
+document.getElementById('toggle-register-pass').addEventListener('click',()=>{ const pass=document.getElementById('new-password'); pass.type=pass.type==='password'?'text':'password'; });
+
+/* ===== REGISTRATION ELEMENTS ===== */
+const showRegister=document.getElementById('show-register');
+const registerContainer=document.getElementById('register-container');
+const backToLogin=document.getElementById('back-to-login');
+const registerForm=document.getElementById('register-form');
+const registerError=document.getElementById('register-error');
+
+/* ===== SHOW/HIDE REGISTRATION ===== */
+showRegister.addEventListener('click', e=>{ e.preventDefault(); loginContainer.classList.add('hidden'); registerContainer.classList.remove('hidden'); });
+backToLogin.addEventListener('click', e=>{ e.preventDefault(); registerContainer.classList.add('hidden'); loginContainer.classList.remove('hidden'); });
+
+/* ===== REGISTER NEW ADMIN ===== */
+registerForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  registerError.textContent='';
+  const newUsername=document.getElementById('new-username').value.trim();
+  const newPassword=document.getElementById('new-password').value.trim();
+  if(!newUsername||!newPassword){ registerError.textContent='Please fill both fields.'; return; }
+  const admins=JSON.parse(localStorage.getItem('admins')||'[]');
+  if(admins.some(a=>a.username===newUsername)){ registerError.textContent='Username exists.'; return; }
+  admins.push({username:newUsername,password:newPassword});
+  localStorage.setItem('admins',JSON.stringify(admins));
+  alert('Registration successful! You can now log in.');
+  registerForm.reset();
+  registerContainer.classList.add('hidden');
+  loginContainer.classList.remove('hidden');
+});
+
+/* ===== LOGIN ===== */
+loginForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  loginError.textContent='';
+  const username=document.getElementById('username').value.trim();
+  const password=document.getElementById('password').value.trim();
+  const admins=JSON.parse(localStorage.getItem('admins')||'[]');
+  const foundAdmin=admins.find(a=>a.username===username && a.password===password);
+  if(foundAdmin){
+    loginContainer.style.display='none';
+    dashboard.style.display='block';
+    generateSubjectInputs();
+    generateSpecialClassInputs();
+    timetableForm.reset();
+    timetableSection.classList.add('hidden');
+    inputSection.style.display='block';
+    if(localStorage.getItem('adminLoggedIn')) loginMessage.textContent='Welcome back, Admin!';
+    else{ loginMessage.textContent='You are successfully logged in.'; localStorage.setItem('adminLoggedIn','true'); }
+    loginMessage.style.display='block';
+    setTimeout(()=>{ loginMessage.style.display='none'; },5000);
+  } else loginError.textContent='Invalid username or password.';
+});
+
+/* ===== LOGOUT ===== */
+logoutBtn.addEventListener('click', ()=>{ dashboard.style.display='none'; loginContainer.style.display='flex'; loginForm.reset(); loginError.textContent=''; });
+
+/* ===== DYNAMIC SUBJECTS & SPECIAL CLASSES ===== */
+function generateSubjectInputs(){
+  const n=parseInt(numSubjectsInput.value);
+  const numFaculties=parseInt(numFacultiesInput.value);
+  subjectsContainer.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const div=document.createElement('div');
+    div.innerHTML=`<label>Subject ${i} Name:</label>
+      <input type="text" class="subject-name" placeholder="Subject name" required />
+      <label>Number of Faculties for Subject ${i}:</label>
+      <input type="number" class="subject-faculty-count" min="1" max="${numFaculties}" value="1" required />
+      <label>Faculty Names (comma separated):</label>
+      <input type="text" class="faculty-name" placeholder="Faculty names" required />
+      <label>Classes per Week:</label>
+      <input type="number" class="subject-classes" min="1" max="20" value="3" required />`;
+    subjectsContainer.appendChild(div);
+  }
+}
+numSubjectsInput.addEventListener('change',generateSubjectInputs);
+numFacultiesInput.addEventListener('change',generateSubjectInputs);
+generateSubjectInputs();
+
+function generateSpecialClassInputs(){
+  const n=parseInt(numSpecialClassesInput.value);
+  specialClassesContainer.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const div=document.createElement('div');
+    div.innerHTML=`<label>Special Class ${i} Subject Name:</label>
+      <input type="text" class="special-subject-name" placeholder="Subject name" required />
+      <label>Faculty Name:</label>
+      <input type="text" class="special-faculty-name" placeholder="Faculty name" required />
+      <label>Day:</label>
+      <select class="special-day" required>
+        <option value="">Select day</option>
+        <option value="0">Monday</option>
+        <option value="1">Tuesday</option>
+        <option value="2">Wednesday</option>
+        <option value="3">Thursday</option>
+        <option value="4">Friday</option>
+        <option value="5">Saturday</option>
+        <option value="6">Sunday</option>
+      </select>
+      <label>Classroom (1-based):</label>
+      <input type="number" class="special-classroom" min="1" max="20" value="1" required />
+      <label>Class Slot (1-based):</label>
+      <input type="number" class="special-slot" min="1" max="8" value="1" required />`;
+    specialClassesContainer.appendChild(div);
+  }
+}
+numSpecialClassesInput.addEventListener('change',generateSpecialClassInputs);
+generateSpecialClassInputs();
+
+/* ===== TIMETABLE GENERATION ===== */
+timetableForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const numClassrooms=parseInt(document.getElementById('numClassrooms').value);
+  const numBatches=parseInt(document.getElementById('numBatches').value);
+  const maxClassesPerDay=parseInt(document.getElementById('maxClassesPerDay').value);
+  const daysPerWeek=parseInt(document.getElementById('daysPerWeek').value);
+
+  const subjectNames=Array.from(document.querySelectorAll('.subject-name')).map(i=>i.value.trim());
+  const subjectClasses=Array.from(document.querySelectorAll('.subject-classes')).map(i=>parseInt(i.value));
+  const facultyNames=Array.from(document.querySelectorAll('.faculty-name')).map(i=>i.value.trim());
+
+  const specialSubjects=Array.from(document.querySelectorAll('.special-subject-name')).map(i=>i.value.trim());
+  const specialFaculties=Array.from(document.querySelectorAll('.special-faculty-name')).map(i=>i.value.trim());
+  const specialDays=Array.from(document.querySelectorAll('.special-day')).map(i=>parseInt(i.value));
+  const specialClassrooms=Array.from(document.querySelectorAll('.special-classroom')).map(i=>parseInt(i.value)-1);
+  const specialSlots=Array.from(document.querySelectorAll('.special-slot')).map(i=>parseInt(i.value)-1);
+
+  if(subjectNames.some(n=>n==='')||facultyNames.some(f=>f==='')){ alert('Fill all subjects/faculties'); return; }
+
+  const timetable=[];
+  for(let d=0;d<daysPerWeek;d++){ 
+    timetable[d]=[]; 
+    for(let c=0;c<numClassrooms;c++){ 
+      timetable[d][c]=new Array(maxClassesPerDay).fill(null); 
+      const mid=Math.floor(maxClassesPerDay/2);
+      timetable[d][c][mid]={batch:'Break',subject:'Tiffin',faculty:''};
+    } 
+  }
+
+  // Special classes
+  for(let i=0;i<specialSubjects.length;i++){
+    timetable[specialDays[i]][specialClassrooms[i]][specialSlots[i]]={batch:'Special',subject:specialSubjects[i],faculty:specialFaculties[i],special:true};
+  }
+
+  // Fill timetable
+  let batchIndex=0;
+  for(let s=0;s<subjectNames.length;s++){
+    for(let k=0;k<subjectClasses[s];k++){
+      let placed=false;
+      for(let attempt=0;attempt<50;attempt++){
+        let d=Math.floor(Math.random()*daysPerWeek);
+        let c=Math.floor(Math.random()*numClassrooms);
+        let slot=Math.floor(Math.random()*maxClassesPerDay);
+        if(!timetable[d][c][slot]){
+          timetable[d][c][slot]={batch:'Batch '+(batchIndex+1),subject:subjectNames[s],faculty:facultyNames[s]};
+          batchIndex=(batchIndex+1)%numBatches;
+          placed=true; break;
+        }
+      }
+      if(!placed) console.warn('Could not place',subjectNames[s]);
+    }
+  }
+
+  // RENDER TABLE (Single big table)
+  let html='<table><tr><th>Day</th><th>Classroom</th>';
+  const slots=generateTimeSlots(maxClassesPerDay);
+  slots.forEach(slot=>{ html+=`<th>${slot}</th>`; });
+  html+='</tr>';
+  for(let d=0;d<daysPerWeek;d++){
+    for(let c=0;c<numClassrooms;c++){
+      html+=`<tr><td>${dayNames[d]}</td><td>Classroom ${c+1}</td>`;
+      for(let slot=0;slot<maxClassesPerDay;slot++){
+        const cell=timetable[d][c][slot];
+        if(cell) html+=`<td>${cell.batch}<br>${cell.subject}<br>${cell.faculty}${cell.special?' ⭐':''}</td>`;
+        else html+='<td></td>';
+      }
+      html+='</tr>';
+    }
+  }
+  html+='</table>';
+
+  timetableDisplay.innerHTML=html;
+  timetableSection.classList.remove('hidden');
+  inputSection.style.display='none';
+});
+regenerateBtn.addEventListener('click',()=>{ timetableSection.classList.add('hidden'); inputSection.style.display='block'; });
+</script>
+</body>
+</html>
